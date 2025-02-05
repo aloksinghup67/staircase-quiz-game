@@ -9,7 +9,7 @@ const startBtn = document.getElementById('startBtn');
 
 let currentStep = 0;
 let score = 0;
-let timeLeft = 60;
+let timeLeft = 120;
 let timerId;
 let currentQuestion = null;
 
@@ -117,7 +117,7 @@ function startGame() {
     startBtn.style.display = 'none';
     currentStep = 0;
     score = 0;
-    timeLeft = 60;
+    timeLeft = 120;
     timerElement.textContent = timeLeft;
     scoreElement.textContent = score;
     updateManPosition();
