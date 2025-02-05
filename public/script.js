@@ -13,26 +13,26 @@ let timeLeft = 120;
 let timerId;
 let currentQuestion = null;
 
-const stairPositions = [
-    { left: 450, top: 520 }, { left: 530, top: 470 },
-    { left: 600, top: 430 }, { left: 670, top: 380 },
-    { left: 730, top: 330 }, { left: 790, top: 280 },
-    { left: 830, top: 230 }, { left: 870, top: 180 },
-    { left: 920, top: 130 }, { left: 970, top: 80 }
-];
+ const stairPositions = [
+            { left: 27, top: 80.5 }, { left: 30, top: 77.5 }, 
+            { left: 34, top: 72.5 }, { left: 38, top: 67 },
+            { left: 44, top: 62 }, { left: 48, top: 56 },
+            { left: 53, top: 51 }, { left: 61, top: 46 },
+            { left: 66, top: 41 }, { left: 70, top: 35 }
+        ];
 
-function updateManPosition() {
-    if (currentStep === 0) {
-        man.style.left = '450px';
-        man.style.top = '560px';
-    } else {
-        const stepIndex = currentStep - 1;
-        if (stepIndex >= stairPositions.length) return;
-        const { left, top } = stairPositions[stepIndex];
-        man.style.left = `${left}px`;
-        man.style.top = `${top}px`;
-    }
-}
+ function updateManPosition() {
+            if (currentStep === 0) {
+                man.style.left = '24vw';
+                man.style.top = '87.5vh';
+            } else {
+                const stepIndex = currentStep - 1;
+                if (stepIndex >= stairPositions.length) return;
+                const { left, top } = stairPositions[stepIndex];
+                man.style.left = `${left}vw`;
+                man.style.top = `${top}vh`;
+            }
+        }
 
 async function generateQuestion() {
     try {
