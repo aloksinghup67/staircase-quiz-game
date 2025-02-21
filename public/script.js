@@ -14,7 +14,7 @@ let timerId;
 let currentQuestion = null;
 
  const stairPositions = [
-            { left: 27, top: 80.5 }, { left: 30, top: 77.5 }, 
+            { left: 27, top: 82.5 }, { left: 30, top: 77.5 }, 
             { left: 34, top: 72.5 }, { left: 38, top: 67 },
             { left: 44, top: 62 }, { left: 48, top: 56 },
             { left: 53, top: 51 }, { left: 61, top: 46 },
