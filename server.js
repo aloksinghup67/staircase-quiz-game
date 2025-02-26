@@ -1,18 +1,3 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-
-// Import fetch properly for Node.js
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
 app.post('/api/generate-question', async (req, res) => {
     try {
         const categories = ['hard computer science', 'hard reasoning', 'hard general knowledge','hard general science','hard numeric','easy general science','easy computer science'];
@@ -29,19 +14,28 @@ app.post('/api/generate-question', async (req, res) => {
         });
 
         const data = await response.json();
+        console.log('API Response:', JSON.stringify(data, null, 2)); 
 
-        if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
+        if (data.error) {
+            console.error('API Error:', data.error);
+            throw new Error(data.error.message || 'API Error');
+        }
+
+        if (!data.candidates || data.candidates.length === 0) {
+            throw new Error('No candidates found in the API response');
+        }
+
+        if (!data.candidates[0].content || !data.candidates[0].content.parts || data.candidates[0].content.parts.length === 0) {
             throw new Error('Invalid API response format');
         }
 
         const questionText = data.candidates[0].content.parts[0].text;
+        console.log('Generated Question:', questionText); 
 
         res.json({ text: questionText });
 
     } catch (error) {
         console.error('Error:', error);
-        res.status(500).json({ error: 'Failed to generate question' });
+        res.status(500).json({ error: 'Failed to generate question', details: error.message });
     }
 });
-
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
