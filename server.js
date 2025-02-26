@@ -2,59 +2,96 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-
-
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-const app = express(); 
+const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-
+// Route to generate a question using the new API
 app.post('/api/generate-question', async (req, res) => {
     try {
-        const categories = ['hard computer science', 'hard reasoning', 'hard general knowledge', 'hard general science', 'hard numeric', 'easy general science', 'easy computer science'];
+        console.log('Generating question...');
+        const categories = [
+            'hard computer science', 'hard reasoning', 'hard general knowledge',
+            'hard general science', 'hard numeric', 'easy general science', 'easy computer science'
+        ];
         const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+        console.log('Selected category:', randomCategory);
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        const userInput = `Generate a ${randomCategory} question with a one-word answer. If the question is numeric, the answer should be in numbers (e.g., "sum of 2 and 3" should answer "5" not "five"). Format:\nQuestion: ...\nCorrect Answer: ...`;
+
+        const payload = {
+            messages: [
+                {
+                    role: 'user',
+                    content: userInput
+                }
+            ],
+            web_access: false
+        };
+
+        const response = await fetch('https://chatgpt-42.p.rapidapi.com/o3mini', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{ text: `Generate a ${randomCategory} question with a one-word answer and if the question is numeric then answer should be also be in numbers ex - sum of 2 and 3 then answer 5 not five. And don't repeat questions Format:\nQuestion: ...\nCorrect Answer: ...` }]
-                }]
-            })
+            headers: {
+                'Content-Type': 'application/json',
+                'x-rapidapi-host': 'chatgpt-42.p.rapidapi.com',
+                'x-rapidapi-key': process.env.RAPIDAPI_KEY // Ensure this is set in your .env file
+            },
+            body: JSON.stringify(payload)
         });
 
+        console.log('API Response Status:', response.status);
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('API HTTP Error:', errorData);
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
-        console.log('API Response:', JSON.stringify(data, null, 2));
+        console.log('API Response:', JSON.stringify(data, null, 2)); // Log the full response
 
-        if (data.error) {
-            console.error('API Error:', data.error);
-            throw new Error(data.error.message || 'API Error');
+        // Adjust parsing logic based on the actual API response structure
+        if (!data.result) {
+            throw new Error('Invalid API response format: Missing "result" field');
         }
 
-        if (!data.candidates || data.candidates.length === 0) {
-            throw new Error('No candidates found in the API response');
+        const generatedText = data.result;
+        console.log('Generated Text:', generatedText);
+
+        // Extract question and answer
+        const questionMatch = generatedText.match(/Question:\s*(.*?)\s*Correct Answer:/i);
+        const answerMatch = generatedText.match(/Correct Answer:\s*(.*)/i);
+
+        if (!questionMatch || !answerMatch) {
+            throw new Error('Invalid question or answer format in generated text');
         }
 
-        if (!data.candidates[0].content || !data.candidates[0].content.parts || data.candidates[0].content.parts.length === 0) {
-            throw new Error('Invalid API response format');
+        const question = questionMatch[1].trim();
+        const correctAnswer = answerMatch[1].trim();
+
+        if (!question || !correctAnswer) {
+            throw new Error('Invalid question or answer format');
         }
 
-        const questionText = data.candidates[0].content.parts[0].text;
-        console.log('Generated Question:', questionText);
-
-        res.json({ text: questionText });
+        res.json({ question, correctAnswer });
 
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error in /api/generate-question:', error);
         res.status(500).json({ error: 'Failed to generate question', details: error.message });
     }
 });
 
+// Serve the index.html file for all other routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
