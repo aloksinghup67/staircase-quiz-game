@@ -1,6 +1,22 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+
+
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
+const app = express(); 
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+
 app.post('/api/generate-question', async (req, res) => {
     try {
-        const categories = ['hard computer science', 'hard reasoning', 'hard general knowledge','hard general science','hard numeric','easy general science','easy computer science'];
+        const categories = ['hard computer science', 'hard reasoning', 'hard general knowledge', 'hard general science', 'hard numeric', 'easy general science', 'easy computer science'];
         const randomCategory = categories[Math.floor(Math.random() * categories.length)];
 
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
@@ -14,7 +30,7 @@ app.post('/api/generate-question', async (req, res) => {
         });
 
         const data = await response.json();
-        console.log('API Response:', JSON.stringify(data, null, 2)); 
+        console.log('API Response:', JSON.stringify(data, null, 2));
 
         if (data.error) {
             console.error('API Error:', data.error);
@@ -30,7 +46,7 @@ app.post('/api/generate-question', async (req, res) => {
         }
 
         const questionText = data.candidates[0].content.parts[0].text;
-        console.log('Generated Question:', questionText); 
+        console.log('Generated Question:', questionText);
 
         res.json({ text: questionText });
 
@@ -39,3 +55,6 @@ app.post('/api/generate-question', async (req, res) => {
         res.status(500).json({ error: 'Failed to generate question', details: error.message });
     }
 });
+
+
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
