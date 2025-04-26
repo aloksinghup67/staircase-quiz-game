@@ -6,15 +6,16 @@ const questionText = document.getElementById('questionText');
 const optionsContainer = document.getElementById('optionsContainer');
 const answerFeedback = document.getElementById('answerFeedback');
 const startBtn = document.getElementById('startBtn');
-const categorySelect = document.getElementById('categorySelect'); // Category selection element
-const categorySelection = document.getElementById('categorySelection'); // Container for category selection
+const categorySelect = document.getElementById('categorySelect');
+const categorySelection = document.getElementById('categorySelection');
+const restartBtn = document.getElementById('restartBtn');
 
 let currentStep = 0;
 let score = 0;
 let timeLeft = 120;
 let timerId;
-let questionSet = [];          // Array to hold loaded questions
-let currentQuestionIndex = 0;  // Tracks which question is being shown
+let questionSet = [];
+let currentQuestionIndex = 0;
 
 const stairPositions = [
   { left: 27, top: 82.5 }, { left: 30, top: 77.5 },
@@ -37,15 +38,12 @@ function updateManPosition() {
   }
 }
 
-// Start game: load 20 questions based on the user-selected category
 async function startGame() {
-  // Check if a valid category has been selected
   if (!categorySelect.value) {
     alert('Please select a category before starting the game.');
     return;
   }
   
-  // Hide the category selection for the duration of the game
   categorySelection.style.display = 'none';
   
   startBtn.style.display = 'none';
@@ -57,20 +55,18 @@ async function startGame() {
   scoreElement.textContent = score;
   updateManPosition();
 
-  // Start the timer
   timerId = setInterval(() => {
     timeLeft--;
     timerElement.textContent = timeLeft;
     if (timeLeft <= 0) {
       clearInterval(timerId);
       modal.style.display = 'none';
-      // Show the category selection again after game over
       categorySelection.style.display = 'block';
       alert(`Game Over! Final Score: ${score}`);
     }
   }, 1000);
 
-  const selectedCategory = categorySelect.value; // Get selected category code from dropdown
+  const selectedCategory = categorySelect.value;
   try {
     const response = await fetch('/api/start-game', {
       method: 'POST',
@@ -90,7 +86,6 @@ async function startGame() {
   } catch (error) {
     console.error('Error starting game:', error);
     alert('Failed to load questions. Please try again.');
-    // Show the category selection again if there is an error
     categorySelection.style.display = 'block';
   }
 }
@@ -119,6 +114,49 @@ function showFeedback(isCorrect, correctAnswer) {
   answerFeedback.style.display = 'block';
 }
 
+function showWinningAnimation() {
+  man.style.animation = 'celebrate 2s infinite';
+  setTimeout(() => {
+    man.style.animation = '';
+    showGameCompleteModal();
+  }, 2000);
+}
+
+function showGameCompleteModal() {
+  modal.style.display = 'block';
+  modal.style.top = '40%';
+  modal.style.left= '50%';
+  questionText.innerHTML = `Congratulations! You've reached the top!<br>Final Score: ${score}<br>Here's your reward!`;
+  optionsContainer.innerHTML = '';
+  answerFeedback.style.display = 'none';
+  
+  const videoContainer = document.createElement('div');
+  videoContainer.className = 'video-container';
+  videoContainer.innerHTML = `
+    <iframe 
+      width="100%" 
+      height="315" 
+      src="https://www.youtube.com/embed/dQw4w9WgXcQ?si=t_YbfCe15Ew22nYn" 
+      title="YouTube video player" 
+      frameborder="0" 
+      allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+      referrerpolicy="strict-origin-when-cross-origin" 
+      allowfullscreen>
+    </iframe>
+  `;
+  optionsContainer.appendChild(videoContainer);
+  
+  const restartButton = document.createElement('button');
+  restartButton.textContent = 'Play Again';
+  restartButton.classList.add('option-btn');
+  restartButton.addEventListener('click', () => {
+    modal.style.display = 'none';
+    categorySelection.style.display = 'block';
+    startBtn.style.display = 'block';
+  });
+  optionsContainer.appendChild(restartButton);
+}
+
 async function handleOptionClick(selectedOption) {
   Array.from(document.getElementsByClassName('option-btn')).forEach(btn => {
     btn.disabled = true;
@@ -132,6 +170,13 @@ async function handleOptionClick(selectedOption) {
   updateManPosition();
   scoreElement.textContent = score;
 
+  if (currentStep === stairPositions.length) {
+    clearInterval(timerId);
+    modal.style.display = 'none';
+    showWinningAnimation();
+    return;
+  }
+
   await new Promise(resolve => setTimeout(resolve, 1000));
 
   currentQuestionIndex++;
@@ -139,7 +184,6 @@ async function handleOptionClick(selectedOption) {
     showQuestion(questionSet[currentQuestionIndex]);
   } else {
     modal.style.display = 'none';
-    // Show the category selection again for the next game
     categorySelection.style.display = 'block';
     alert(`Game Over! Final Score: ${score}`);
   }
