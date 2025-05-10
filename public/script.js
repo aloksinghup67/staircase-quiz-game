@@ -10,6 +10,11 @@ const categorySelect = document.getElementById('categorySelect');
 const categorySelection = document.getElementById('categorySelection');
 const restartBtn = document.getElementById('restartBtn');
 
+
+const correctSound = document.getElementById('correctSound');
+const incorrectSound = document.getElementById('incorrectSound');
+const winSound = document.getElementById('winSound');
+
 let currentStep = 0;
 let score = 0;
 let timeLeft = 120;
@@ -116,6 +121,7 @@ function showFeedback(isCorrect, correctAnswer) {
 
 function showWinningAnimation() {
   man.style.animation = 'celebrate 2s infinite';
+  winSound.play();
   setTimeout(() => {
     man.style.animation = '';
     showGameCompleteModal();
@@ -163,6 +169,16 @@ async function handleOptionClick(selectedOption) {
   });
   const currentQuestion = questionSet[currentQuestionIndex];
   const isCorrect = selectedOption === currentQuestion.correctAnswer;
+  
+  // Play appropriate sound
+  if (isCorrect) {
+    correctSound.currentTime = 0; // Reset sound to start
+    correctSound.play();
+  } else {
+    incorrectSound.currentTime = 0; // Reset sound to start
+    incorrectSound.play();
+  }
+  
   showFeedback(isCorrect, currentQuestion.correctAnswer);
 
   score += isCorrect ? 10 : -5;
